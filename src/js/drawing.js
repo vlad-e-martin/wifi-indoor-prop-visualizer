@@ -1,11 +1,11 @@
 // src/js/drawing.js
 
 // Define Material Configs (Tailwind-like colors for consistency)
-const WALL_TYPES = {
+export const WALL_TYPES = {
     CONCRETE: { name: "Reinforced Concrete", color: "#4b5563", thickness: 10 }, // slate-600
     BRICK:    { name: "Brick / Masonry",     color: "#b91c1c", thickness: 8 },  // red-700
     WOOD:     { name: "Solid Wood",          color: "#92400e", thickness: 5 },  // amber-900
-    DRYWALL:  { name: "Drywall w/ Studs",    color: "#0f172a", thickness: 3 },  // slate-900
+    DRYWALL:  { name: "Drywall w/ Studs",    color: "#d2b48c", thickness: 3 },  // tan
 };
 
 // Set the active material (default to DRYWALL)

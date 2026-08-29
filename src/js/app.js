@@ -1,6 +1,7 @@
 // src/js/app.js
 
-import { initDrawingCanvas, clearAllLines, getWallCoordinates, setActiveMaterial } from './drawing.js';
+import { initDrawingCanvas, clearAllLines, getWallCoordinates, 
+    setActiveMaterial, WALL_TYPES } from './drawing.js';
 
 // DOM Elements
 const imageUpload = document.getElementById('imageUpload');
@@ -16,16 +17,136 @@ const matButtons = materialSelector.querySelectorAll('.mat-btn');
 const step2Container = document.getElementById('step2-container');
 const step3Container = document.getElementById('step3-container');
 
+// Router UI Elements
+const routerXInput = document.getElementById('routerX');
+const routerYInput = document.getElementById('routerY');
+
 // State to hold walls globally in the app
 let activeWallsData = [];
+let mainCanvas = null;
+let routerPhantom = null;
+let routerPin = null;
+
+// Main Workspace Setup + Router Placement Logic
+function initMainWorkspace() {
+    if (mainCanvas) return; // Already initialized
+
+    mainCanvas = new fabric.Canvas('mainWorkspaceCanvas', {
+        selection: false,
+        hoverCursor: 'crosshair'
+    });
+
+    // Create the semi-transparent hover icon
+    routerPhantom = new fabric.Circle({
+        radius: 8, fill: '#3b82f6', opacity: 0.5,
+        originX: 'center', originY: 'center',
+        selectable: false, evented: false, visible: false
+    });
+    mainCanvas.add(routerPhantom);
+
+    // Create the solid placed icon
+    routerPin = new fabric.Circle({
+        radius: 8, fill: '#1d4ed8', stroke: '#ffffff', strokeWidth: 2,
+        originX: 'center', originY: 'center',
+        selectable: false, evented: false, visible: false,
+        shadow: new fabric.Shadow({ color: 'rgba(0,0,0,0.5)', blur: 4 })
+    });
+    mainCanvas.add(routerPin);
+
+    // Hover effect: Phantom follows mouse
+    mainCanvas.on('mouse:move', function(o) {
+        if (!routerPhantom) return;
+        const ptr = mainCanvas.getPointer(o.e);
+        routerPhantom.set({ left: ptr.x, top: ptr.y, visible: true });
+        mainCanvas.renderAll();
+    });
+
+    // Hide phantom if mouse leaves canvas
+    mainCanvas.on('mouse:out', function() {
+        if (!routerPhantom) return;
+        routerPhantom.set({ visible: false });
+        mainCanvas.renderAll();
+    });
+
+    // Click: Place the permanent router pin and update UI
+    mainCanvas.on('mouse:down', function(o) {
+        if (!routerPin) return;
+        const ptr = mainCanvas.getPointer(o.e);
+        
+        routerPin.set({ left: ptr.x, top: ptr.y, visible: true });
+        
+        // Ensure pins always stay on top of the walls
+        mainCanvas.bringToFront(routerPin);
+        mainCanvas.bringToFront(routerPhantom);
+        
+        // Update the Sidebar UI
+        routerXInput.value = Math.round(ptr.x);
+        routerYInput.value = Math.round(ptr.y);
+        
+        mainCanvas.renderAll();
+    });
+}
+
+function renderLayoutToWorkspace() {
+    initMainWorkspace();
+
+    // Clear pre-existing floor plan but keep the router placement
+    const objects = mainCanvas.getObjects().filter(obj => obj !== routerPhantom && obj !== routerPin);
+    objects.forEach(obj => mainCanvas.remove(obj));
+
+    // Reset router pin if layout changes
+    routerPin.visible = false;
+    routerXInput.value = "";
+    routerYInput.value = "";
+
+    // Find the bounding box of the complete floor plan
+    let maxX = 0;
+    let maxY = 0;
+    activeWallsData.forEach(wall => {
+        maxX = Math.max(maxX, wall.x1, wall.x2);
+        maxY = Math.max(maxY, wall.y1, wall.y2);
+    });
+
+    // Resize canvas to fit the floor plan
+    mainCanvas.setDimensions({
+        width: maxX + 100,
+        height: maxY + 100
+    });
+
+    // Set canvas background color to white
+    mainCanvas.setBackgroundColor('#ffffff', mainCanvas.renderAll.bind(mainCanvas));
+
+    // Draw walls
+    activeWallsData.forEach(wall => {
+        // Fallback to Drywall if material is missing for some reason
+        const config = WALL_TYPES[wall.material] || WALL_TYPES.DRYWALL; 
+        
+        const line = new fabric.Line([wall.x1, wall.y1, wall.x2, wall.y2], {
+            strokeWidth: config.thickness,
+            fill: config.color,
+            stroke: config.color,
+            originX: 'center', originY: 'center',
+            selectable: false, evented: false
+        });
+        mainCanvas.add(line);
+    });
+
+    // Ensure pins are layered correctly
+    mainCanvas.bringToFront(routerPin);
+    mainCanvas.bringToFront(routerPhantom);
+    
+    // Force Fabric to recalculate physical mouse boundaries
+    mainCanvas.calcOffset();
+    mainCanvas.renderAll();
+}
 
 // UI State Management
 function unlockNextSteps() {
     // Remove the classes that grey out and disable clicks
     step2Container.classList.remove('opacity-50', 'pointer-events-none');
     step3Container.classList.remove('opacity-50', 'pointer-events-none');
-    
-    console.log("UI Unlocked. Active Walls:", activeWallsData);
+    // Render floorplan and allow router placement
+    renderLayoutToWorkspace();
 }
 
 // Handle File Upload
@@ -88,7 +209,6 @@ clearLinesBtn.addEventListener('click', () => {
     clearAllLines();
 });
 
-// Handle JSON Upload (Skip Drawing)
 jsonUpload.addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
@@ -110,8 +230,7 @@ jsonUpload.addEventListener('change', function(e) {
             }
             
             activeWallsData = parsedData;
-            alert(`Successfully loaded ${activeWallsData.length} walls!`);
-            unlockNextSteps();
+            unlockNextSteps(); // Unlocks other components of the UI and draws the saved floorplan
             
         } catch (error) {
             alert("Error parsing layout file. Ensure it was generated by this simulator.");

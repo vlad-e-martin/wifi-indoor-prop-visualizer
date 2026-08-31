@@ -39,7 +39,7 @@ namespace ITUR_P2040 {
         {MaterialClass::Plasterboard, {2.56, 0.0, 0.0001, 1.7799, 110.0, 330.0}},
         {MaterialClass::Plasterboard, {2.65, 0.0, 0.0002, 1.5980, 100.0, 400.0}},
         {MaterialClass::Wood,         {1.99, 0.0, 0.0047, 1.0718, 0.001, 100.0}},
-        {MaterialClass::Wood,         {1.82, 0.0, 0.0040, 1.0761, 110.0, 330.0}}
+        {MaterialClass::Wood,         {1.82, 0.0, 0.0040, 1.0761, 110.0, 330.0}},
         {MaterialClass::Wood,         {2.1183, 0.0, 0.0055, 1.1113, 100.0, 400.0}}
     };
 

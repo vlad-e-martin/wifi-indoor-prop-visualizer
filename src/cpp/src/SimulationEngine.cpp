@@ -4,19 +4,66 @@
 #include <cmath>
 
 namespace RfSimulation {
+    // Helper for 2D cross product of 3D vectors (ignoring Z)
+    namespace {
+        double crossProduct2D(const Eigen::Vector3d& v, const Eigen::Vector3d& w) {
+            return v.x() * w.y() - v.y() * w.x();
+        }
+    }
+
+    std::optional<Eigen::Vector3d> SimulationEngine::getIntersection(
+        const Eigen::Vector3d& p1, const Eigen::Vector3d& p2, const Wall& wall) 
+    {
+        Eigen::Vector3d rayVec = p2 - p1;
+        Eigen::Vector3d wallVec = wall.end - wall.start;
+        Eigen::Vector3d w1_minus_p1 = wall.start - p1;
+
+        double denominator = crossProduct2D(rayVec, wallVec);
+
+        // If denominator is very close to 0, lines are parallel or collinear
+        if (std::abs(denominator) < 1e-8) {
+            return std::nullopt; 
+        }
+
+        double t = crossProduct2D(w1_minus_p1, wallVec) / denominator;
+        double u = crossProduct2D(w1_minus_p1, rayVec) / denominator;
+
+        // Check if the intersection happens strictly within both line segments
+        if (t >= 0.0 && t <= 1.0 && u >= 0.0 && u <= 1.0) {
+            // Calculate the point of intersection
+            // NOTE: Interpolation of the intersection point's Z-coordinate is feasible because the wall is vertical
+            Eigen::Vector3d intersectionPt = p1 + t * rayVec;
+            return intersectionPt;
+        }
+
+        return std::nullopt;
+    }
+
+    int SimulationEngine::countWallIntersections(
+        const Eigen::Vector3d& startPt, const Eigen::Vector3d& endPt, const std::vector<Wall>& walls) 
+    {
+        int count = 0;
+        for (const auto& wall : walls) {
+            if (getIntersection(startPt, endPt, wall).has_value()) {
+                count++;
+            }
+        }
+        return count;
+    }
+
     // NOTE: Assumes a vertically oriented dipole antenna (Z-axis)
     static RayState SimulationEngine::initializeTxRay(const Eigen::Vector3d& txPos, const Eigen::Vector3d& launchDir) {
         RayState ray;
         ray.position = txPos;
         ray.direction = launchDir.normalized();
         
-        // For a vertical antenna, the E-field starts purely vertical (Z).
-        // However, an EM wave's E-field MUST be orthogonal to its travel direction.
-        // We find the initial E-field by rejecting the travel direction component.
+        // We assume the WiFi antennae are vertically-oriented, so the E-field starts purely vertical (Z)
+        // NOTE: An EM wave's E-field MUST be orthogonal to its travel direction
+        // We find the initial E-field by forcing it to be orthogonal to the ray's direction
         Eigen::Vector3d zAxis(0.0, 0.0, 1.0);
         Eigen::Vector3d initialEField = zAxis - (zAxis.dot(ray.direction)) * ray.direction;
         
-        // Normalize and convert to complex vector
+        // Normalize and convert to complex vector to apply complex reflection coefficient
         initialEField.normalize();
         ray.eField = initialEField.cast<std::complex<double>>();
         

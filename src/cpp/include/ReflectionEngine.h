@@ -9,14 +9,18 @@ namespace RfSimulation {
 
     class ReflectionEngine {
     public:
-        /// @brief Calculates the reflection coefficient associated with a slab of a given material
-        /// @param angleOfIncidence_rad The angle of incidence of the ray hitting the slab (rad)
-        /// @param thickness_m The thickness of the slab the ray is incident on (m)
-        /// @param freq_GHz Frequency (GHz)
-        /// @param materialClass Class of material of interest
-        /// @param isTE Indicates whether the incident electric vector is transverse electric polarization 
-        ///             (perpendicular to the plane of incidence) or not
-        /// @return Reflection coefficient applied to a ray incident on a specific material
+        /// @brief Calculates the complex reflection coefficient for a single-layer slab (e.g., a wall).
+        /// 
+        /// This implements ITU-R P.2040 to determine how much of an electric wave reflects off a wall (rather than penetrating it) 
+        /// It accounts for the initial bounce off the front face and simplifies the math for the infinite series 
+        /// of internal bounces occurring inside the slab that eventually transmit back out of the front face.
+        ///
+        /// @param angleOfIncidence_rad Angle between the incoming ray and the surface normal (0 = head-on)
+        /// @param thickness_m Physical thickness of the wall slab (m)
+        /// @param freq_GHz Frequency of the transmitting wave (GHz)
+        /// @param materialClass Material classification (as categorized by the ITU-R P.2040)
+        /// @param isTE True for Transverse Electric (E-field perpendicular to plane of incidence), False for TM
+        /// @return Complex reflection coefficient (magnitude and phase shift)
         static std::complex<double> calcSingleLayerSlabReflection(
             double angleOfIncidence_rad, 
             double thickness_m, 

@@ -6,30 +6,36 @@
 
 #include <Eigen/Dense>
 
+#include <vector>
+#include <optional>
+
 namespace RfSimulation {
     class SimulationEngine {
     public:
-        // Core pathfinding execution for a single Rx coordinate
-        static std::vector<RayPath> computeValidPaths(
-            const Eigen::Vector3d& txPos, 
-            const Eigen::Vector3d& rxPos, 
-            const std::vector<Wall>& walls, 
-            int maxBounces = 10);
+        /// @brief Initializes a ray originating from a vertically oriented dipole transmitter.
+        static RayState initializeTxRay(const Eigen::Vector3d& txPos, const Eigen::Vector3d& launchDir);
+        
+        /// @brief Processes the EM physics of a ray bouncing off a boundary, updating its E-field and direction.
+        static void processReflection(
+            RayState& ray, 
+            const Eigen::Vector3d& intersectionPt, 
+            const Eigen::Vector3d& surfaceNormal, 
+            double wallThickness_m, 
+            double freq_GHz, 
+            ITUR_P2040::MaterialClass materialClass);
 
-    private:
-        // Recursive geometric mirroring to build the virtual Tx tree
-        static void buildImageTree();
-
-        // Fallback helper to count direct wall penetrations
+        /// @brief Counts the number of walls physically intersected by a direct line-of-sight path.
         static int countWallIntersections(
-            const Eigen::Vector3d& p1, 
-            const Eigen::Vector3d& p2, 
+            const Eigen::Vector3d& startPt, 
+            const Eigen::Vector3d& endPt, 
             const std::vector<Wall>& walls);
 
-        // Validates a back-traced line segment against physical obstructions
-        static bool isPathObstructed(
-            const Eigen::Vector3d& p1, const Eigen::Vector3d& p2, 
-            const std::vector<Wall>& walls, const Wall* ignoreWall);
+        /// @brief Calculates the 2D intersection point between a ray segment and a wall segment.
+        /// @return The 3D intersection point (with interpolated Z) if an intersection occurs, otherwise std::nullopt.
+        static std::optional<Eigen::Vector3d> getIntersection(
+            const Eigen::Vector3d& p1, 
+            const Eigen::Vector3d& p2, 
+            const Wall& wall);
     };
 }
 

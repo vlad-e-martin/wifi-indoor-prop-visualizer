@@ -11,6 +11,147 @@ namespace RfSimulation {
         }
     }
 
+    Eigen::Vector3d SimulationEngine::mirrorPoint(const Eigen::Vector3d& pt, const Wall& wall) {
+        Eigen::Vector3d wallVec = wall.end - wall.start;
+        // 2D Normal vector pointing away from the wall plane
+        Eigen::Vector3d n(-wallVec.y(), wallVec.x(), 0.0);
+        n.normalize();
+        
+        Eigen::Vector3d v = pt - wall.start;
+        double dist = v.dot(n);
+        
+        // P' = P - 2*d*n
+        return pt - 2.0 * dist * n;
+    }
+
+    bool SimulationEngine::isObstructed(
+        const Eigen::Vector3d& p1, const Eigen::Vector3d& p2, 
+        const std::vector<Wall>& walls, int ignoreWallIdx1, int ignoreWallIdx2) 
+    {
+        for (size_t i = 0; i < walls.size(); ++i) {
+            if (static_cast<int>(i) == ignoreWallIdx1 || static_cast<int>(i) == ignoreWallIdx2) {
+                continue;
+            }
+            
+            // If the ray segment intersects an unintended wall, the path is blocked
+            if (getIntersection(p1, p2, walls[i]).has_value()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    std::vector<ImageNode> SimulationEngine::generateImageTree(
+        const Eigen::Vector3d& txPos, const std::vector<Wall>& walls, int maxBounces) 
+    {
+        std::vector<ImageNode> tree;
+        // Note: For N bounces and W walls, the tree size is roughly W^N 
+        // If we assume that most single-floor homes will have ~16 walls, then
+        // W=16, N=5 and thus the vector size must be ~1,000,000 
+        tree.reserve(1000000); 
+
+        // Add the root node (Physical Tx)
+        tree.push_back({txPos, -1, -1});
+
+        int currentLevelStart = 0;
+        int currentLevelEnd = 1;
+
+        for (int depth = 1; depth <= maxBounces; ++depth) {
+            int nextLevelEnd = currentLevelEnd;
+
+            // Iterate over all nodes generated in the previous depth level
+            for (int i = currentLevelStart; i < currentLevelEnd; ++i) {
+                const ImageNode& parentNode = tree[i];
+
+                // Mirror this node across every wall
+                for (size_t w = 0; w < walls.size(); ++w) {
+                    // Don't mirror across the wall we just processed
+                    if (parentNode.wallIndex == static_cast<int>(w)) {
+                        continue;
+                    }
+
+                    Eigen::Vector3d mirroredPos = mirrorPoint(parentNode.position, walls[w]);
+                    tree.push_back({mirroredPos, static_cast<int>(w), i});
+                    nextLevelEnd++;
+                }
+            }
+            
+            // Advance the BFS queue indices
+            currentLevelStart = currentLevelEnd;
+            currentLevelEnd = nextLevelEnd;
+        }
+
+        return tree;
+    }
+
+    std::vector<RayPath> SimulationEngine::computeValidPaths(
+        const Eigen::Vector3d& txPos, const Eigen::Vector3d& rxPos, 
+        const std::vector<Wall>& walls, const std::vector<ImageNode>& imageTree) 
+    {
+        std::vector<RayPath> validPaths;
+
+        // Starting from the transmitter, consider all possible ray reflection combinations
+        for (const auto& leafNode : imageTree) {
+            Eigen::Vector3d targetPos = rxPos;
+            const ImageNode* currentNode = &leafNode;
+            
+            RayPath currentPath;
+            currentPath.nodes.push_back(rxPos);
+            
+            bool isGeometricallyValid = true;
+            int lastWallHitIdx = -1;
+
+            // Back-trace the reflections up the tree to the Tx root
+            while (currentNode->parentIndex != -1) {
+                const Wall& mirrorWall = walls[currentNode->wallIndex];
+                
+                // Find where the line from target to virtual image intersects the wall
+                auto hitOpt = getIntersection(targetPos, currentNode->position, mirrorWall);
+                
+                if (!hitOpt.has_value()) {
+                    // The path from the transmitter to the receiver does not intersect with this wall
+                    // Skip it and keep searching
+                    isGeometricallyValid = false;
+                    break;
+                }
+
+                Eigen::Vector3d physicalHitPt = hitOpt.value();
+                
+                // Check if there is another wall which intersects with the path before this wall
+                if (isObstructed(targetPos, physicalHitPt, walls, lastWallHitIdx, currentNode->wallIndex)) {
+                    isGeometricallyValid = false;
+                    break;
+                }
+
+                // It is possible for the ray to go in a straight line and hit this wall
+                currentPath.nodes.insert(currentPath.nodes.begin(), physicalHitPt);
+                currentPath.hitWalls.insert(currentPath.hitWalls.begin(), mirrorWall);
+                
+                // Update to account for the reflection event
+                targetPos = physicalHitPt;
+                lastWallHitIdx = currentNode->wallIndex;
+                currentNode = &imageTree[currentNode->parentIndex];
+            }
+
+            // This should not be possible
+            if (!isGeometricallyValid) {
+                continue;
+            }
+
+            // Check if the Tx --> Rx path is actually obstructed at all
+            if (isObstructed(targetPos, txPos, walls, lastWallHitIdx, -1)) {
+                continue;
+            }
+
+            // Finalize the reflected path
+            currentPath.nodes.insert(currentPath.nodes.begin(), txPos);
+            // Store this reflected path as a valid Tx --> Rx path
+            validPaths.push_back(currentPath);
+        }
+
+        return validPaths;
+    }
+
     std::optional<Eigen::Vector3d> SimulationEngine::getIntersection(
         const Eigen::Vector3d& p1, const Eigen::Vector3d& p2, const Wall& wall) 
     {

@@ -10,12 +10,19 @@
 #include <optional>
 
 namespace RfSimulation {
+    /// @brief Represents a virtual transmitter mirrored across a sequence of walls
+    struct ImageNode {
+        Eigen::Vector3d position;
+        int wallIndex;   // Wall where this node was mirrored across (-1 for root Tx)
+        int parentIndex; // Parent image node in the flat tree array (-1 for root Tx)
+    };
+
     class SimulationEngine {
     public:
-        /// @brief Initializes a ray originating from a vertically oriented dipole transmitter.
+        /// @brief Initializes a ray originating from a vertically oriented dipole transmitter
         static RayState initializeTxRay(const Eigen::Vector3d& txPos, const Eigen::Vector3d& launchDir);
         
-        /// @brief Processes the EM physics of a ray bouncing off a boundary, updating its E-field and direction.
+        /// @brief Processes the EM physics of a ray bouncing off a boundary, updating its E-field and direction
         static void processReflection(
             RayState& ray, 
             const Eigen::Vector3d& intersectionPt, 
@@ -24,33 +31,51 @@ namespace RfSimulation {
             double freq_GHz, 
             ITUR_P2040::MaterialClass materialClass);
 
-        /// @brief Counts the number of walls physically intersected by a direct line-of-sight path.
+        /// @brief Counts the number of walls physically intersected by a direct line-of-sight path
         static int countWallIntersections(
             const Eigen::Vector3d& startPt, 
             const Eigen::Vector3d& endPt, 
             const std::vector<Wall>& walls);
 
-        /// @brief Calculates the 2D intersection point between a ray segment and a wall segment.
-        /// @return The 3D intersection point (with interpolated Z) if an intersection occurs, otherwise std::nullopt.
+        /// @brief Calculates the 2D intersection point between a ray segment and a wall segment
+        /// @return The 3D intersection point (with interpolated Z) if an intersection occurs, otherwise std::nullopt
         static std::optional<Eigen::Vector3d> getIntersection(
             const Eigen::Vector3d& p1, 
             const Eigen::Vector3d& p2, 
             const Wall& wall);
-    };
-}
 
-namespace RfSimulation {
-    class SimulationEngine {
-    public:
-        static RayState initializeTxRay(const Eigen::Vector3d& txPos, const Eigen::Vector3d& launchDir);
+        /// @brief Recursively generates the virtual transmitter image tree (only runs once per simulation)
+        /// @param txPos The transmitter location
+        /// @param walls The list of all walls in the environment
+        /// @param maxBounces The maximum number of bounces before we stop considering this path
+        /// @return A flat array representing the hierarchical Image Tree
+        static std::vector<ImageNode> generateImageTree(
+            const Eigen::Vector3d& txPos, 
+            const std::vector<Wall>& walls, 
+            int maxBounces);
+
+        /// @brief Traces paths backward from Rx to Tx using the pre-computed Image Tree
+        /// @param txPos The transmitter location
+        /// @param rxPos The target grid point receiver location
+        /// @param walls The list of all walls in the environment
+        /// @param imageTree The pre-computed virtual image tree
+        /// @return A list of geometrically valid paths
+        static std::vector<RayPath> computeValidPaths(
+            const Eigen::Vector3d& txPos, 
+            const Eigen::Vector3d& rxPos, 
+            const std::vector<Wall>& walls, 
+            const std::vector<ImageNode>& imageTree);
+    private:
+        /// @brief Mirror a point across a 2.5D wall plane
+        static Eigen::Vector3d mirrorPoint(const Eigen::Vector3d& pt, const Wall& wall);
         
-        static void processReflection(
-            RayState& ray, 
-            const Eigen::Vector3d& intersectionPt, 
-            const Eigen::Vector3d& surfaceNormal, 
-            double wallThickness_m, 
-            double freq_GHz, 
-            ITUR_P2040::MaterialClass materialClass);
+        /// @brief Check if a valid path segment hits any obstructing walls
+        static bool isObstructed(
+            const Eigen::Vector3d& p1, 
+            const Eigen::Vector3d& p2, 
+            const std::vector<Wall>& walls, 
+            int ignoreWallIdx1, 
+            int ignoreWallIdx2);
     };
 }
 

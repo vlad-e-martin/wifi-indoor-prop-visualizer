@@ -193,7 +193,7 @@ namespace RfSimulation {
     }
 
     // NOTE: Assumes a vertically oriented dipole antenna (Z-axis)
-    static RayState SimulationEngine::initializeTxRay(const Eigen::Vector3d& txPos, const Eigen::Vector3d& launchDir) {
+    RayState SimulationEngine::initializeTxRay(const Eigen::Vector3d& txPos, const Eigen::Vector3d& launchDir) {
         RayState ray;
         ray.position = txPos;
         ray.direction = launchDir.normalized();
@@ -212,7 +212,7 @@ namespace RfSimulation {
     }
 
     // Process a single bounce against a wall/floor/ceiling
-    static void SimulationEngine::processReflection(
+    void SimulationEngine::processReflection(
         RayState& ray, 
         const Eigen::Vector3d& intersectionPt, 
         const Eigen::Vector3d& surfaceNormal, 

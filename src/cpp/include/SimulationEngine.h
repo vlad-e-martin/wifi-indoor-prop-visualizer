@@ -31,8 +31,8 @@ namespace RfSimulation {
             double freq_GHz, 
             ITUR_P2040::MaterialClass materialClass);
 
-        /// @brief Counts the number of walls physically intersected by a direct line-of-sight path
-        static int countWallIntersections(
+        /// @brief Returns a list of all walls physically intersected by a direct line-of-sight path.
+        static std::vector<Wall> getIntersectedWalls(
             const Eigen::Vector3d& startPt, 
             const Eigen::Vector3d& endPt, 
             const std::vector<Wall>& walls);

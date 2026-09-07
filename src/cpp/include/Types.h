@@ -7,6 +7,8 @@
 #include <complex>
 
 namespace RfSimulation {
+    inline constexpr double kSpeedOfLight_mPerSec = 299792458.0;
+
     // Represents a wall within the indoor floor plan
     struct Wall {
         Eigen::Vector3d start;

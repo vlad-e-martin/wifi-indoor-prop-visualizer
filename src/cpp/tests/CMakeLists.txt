@@ -1,4 +1,6 @@
-add_executable(RfSimulationTests ReflectionEngineTests.cpp)
+add_executable(RfSimulationTests
+    ReflectionEngineTests.cpp
+    SimulationEngineTests.cpp)
 target_link_libraries(RfSimulationTests PRIVATE 
     RfSimulationLib 
     GTest::gtest_main 

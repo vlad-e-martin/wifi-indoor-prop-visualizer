@@ -180,16 +180,15 @@ namespace RfSimulation {
         return std::nullopt;
     }
 
-    int SimulationEngine::countWallIntersections(
-        const Eigen::Vector3d& startPt, const Eigen::Vector3d& endPt, const std::vector<Wall>& walls) 
-    {
-        int count = 0;
+    std::vector<Wall> SimulationEngine::getIntersectedWalls(
+        const Eigen::Vector3d& startPt, const Eigen::Vector3d& endPt, const std::vector<Wall>& walls) {
+        std::vector<Wall> intersected;
         for (const auto& wall : walls) {
             if (getIntersection(startPt, endPt, wall).has_value()) {
-                count++;
+                intersected.push_back(wall);
             }
         }
-        return count;
+        return intersected;
     }
 
     // NOTE: Assumes a vertically oriented dipole antenna (Z-axis)

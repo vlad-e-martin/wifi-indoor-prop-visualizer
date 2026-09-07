@@ -5,8 +5,6 @@
 #include <complex>
 
 namespace RfSimulation {
-    constexpr double kSpeedOfLight_mPerSec = 299792458.0;
-
     class ReflectionEngine {
     public:
         /// @brief Calculates the complex reflection coefficient for a single-layer slab (e.g., a wall).

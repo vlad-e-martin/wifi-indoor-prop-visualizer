@@ -1,6 +1,8 @@
 #ifndef ITUR_P1238_H
 #define ITUR_P1238_H
 
+#include "Types.h"
+
 #include <array>
 #include <cmath>
 #include <numbers>
@@ -8,8 +10,6 @@
 #include <algorithm>
 
 namespace ITUR_P1238 {
-    constexpr double kSpeedOfLight_mPerSec = 299792458.0;
-
     enum class EnvironmentType {
         Office,
         Corridor,

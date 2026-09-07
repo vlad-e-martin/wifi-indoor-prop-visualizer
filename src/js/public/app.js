@@ -1,7 +1,9 @@
-// src/js/app.js
+// src/js/public/app.js
 
 import { initDrawingCanvas, clearAllLines, getWallCoordinates, 
     setActiveMaterial, WALL_TYPES } from './drawing.js';
+
+import { runSimulation } from './simulation.js';
 
 // DOM Elements
 const imageUpload = document.getElementById('imageUpload');
@@ -20,6 +22,9 @@ const step3Container = document.getElementById('step3-container');
 // Router UI Elements
 const routerXInput = document.getElementById('routerX');
 const routerYInput = document.getElementById('routerY');
+
+// Simulate Elements
+const simulateBtn = document.getElementById('runSimBtn');
 
 // State to hold walls globally in the app
 let activeWallsData = [];
@@ -276,4 +281,15 @@ saveWallsBtn.addEventListener('click', () => {
     // Transition the UI
     drawingModal.classList.add('hidden');
     unlockNextSteps(); // Unlock rest of the screen for next steps
+});
+
+simulateBtn.addEventListener('click', () => {
+    // Pass the current app state into the simulation module
+    runSimulation(
+        activeWallsData, 
+        routerXInput.value, 
+        routerYInput.value, 
+        mainCanvas, 
+        simulateBtn
+    );
 });

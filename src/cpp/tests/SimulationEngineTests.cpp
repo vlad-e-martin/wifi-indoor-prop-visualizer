@@ -30,8 +30,8 @@ TEST_F(SimulationEngineTest, UnobstructedPath_LoS) {
     Vector3d rxPos(7.5, 5.0, 1.5); // Center of Room B
 
     // Verify that there are no wall intersections between Tx & Rx
-    int intersections = SimulationEngine::countWallIntersections(txPos, rxPos, walls);
-    EXPECT_EQ(intersections, 0);
+    const auto numIntersects = SimulationEngine::getIntersectedWalls(txPos, rxPos, walls).size();
+    EXPECT_EQ(numIntersects, 0);
 
     // Generate a shallow tree (maximum of 1 reflection is enough since we know this is a LoS path)
     auto shallowImageTree = SimulationEngine::generateImageTree(txPos, walls, 1);
@@ -56,8 +56,8 @@ TEST_F(SimulationEngineTest, BlockedByWall_NLoS) {
     Vector3d rxPos(7.5, 2.0, 1.5); // Room B, directly opposite also behind a wall
 
     // There should be 1 wall in the way between the Tx & Rx
-    int intersections = SimulationEngine::countWallIntersections(txPos, rxPos, walls);
-    EXPECT_EQ(intersections, 1);
+    const auto numIntersects = SimulationEngine::getIntersectedWalls(txPos, rxPos, walls).size();
+    EXPECT_EQ(numIntersects, 1);
 
     auto imageTree = SimulationEngine::generateImageTree(txPos, walls, 1);
     auto validPaths = SimulationEngine::computeValidPaths(txPos, rxPos, walls, imageTree);

@@ -1,0 +1,24 @@
+{
+  "name": "wifi-indoor-prop-visualizer",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vlad-e-martin/wifi-indoor-prop-visualizer.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vlad-e-martin/wifi-indoor-prop-visualizer/issues"
+  },
+  "homepage": "https://github.com/vlad-e-martin/wifi-indoor-prop-visualizer#readme",
+  "description": "",
+  "dependencies": {
+    "express": "^5.2.1",
+    "node-addon-api": "^8.9.2"
+  }
+}

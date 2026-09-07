@@ -1,1 +1,7 @@
+# Build outputs
+build/*
 src/cpp/build/*
+
+# JS
+node_modules/*
+package-lock.json

@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 3.28)
 project(RfSimulation VERSION 1.0 LANGUAGES CXX)
 
-# Require C++20 for <numbers> and <optional>
+# Require C++20 standard here redundantly for standalone test build
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 include(FetchContent)
 
-# Fetch Eigen 3.4.0
+# Fetch Eigen 5.0.0
 FetchContent_Declare(
     eigen
     GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
@@ -28,7 +28,7 @@ FetchContent_MakeAvailable(json)
 add_library(RfSimulationLib
     src/ReflectionEngine.cpp
     src/SimulationEngine.cpp
-    # src/IndoorSimulator.cpp
+    src/IndoorSimulator.cpp
 )
 
 # Tell the compiler where the include/ folder is

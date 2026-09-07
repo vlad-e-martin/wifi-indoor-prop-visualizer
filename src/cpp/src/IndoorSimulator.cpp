@@ -102,7 +102,7 @@ namespace RfSimulation {
                 if (!validPaths.empty()) {
                     // Use ray tracing to superimpose all valid rays 
                     // into the final received E-field (thus accounting for multipath effects)
-                    std::complex<double> totalEField_Rx(0.0, 0.0);
+                    Eigen::Vector3cd totalEField_Rx = Eigen::Vector3cd::Zero();
 
                     for (const auto& path : validPaths) {
                         // The Tx and Rx should always be nodes in a valid path
@@ -135,7 +135,7 @@ namespace RfSimulation {
                     }
 
                     // Convert Total E-Field magnitude squared back to dBm
-                    double receivedPower_W = std::norm(totalEField_Rx) * txPower_W; 
+                    double receivedPower_W = totalEField_Rx.squaredNorm() * txPower_W;
                     heatmap[y * gridWidth + x] = 10.0 * std::log10(receivedPower_W) + 30.0;
                     
                 } else {

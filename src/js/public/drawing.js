@@ -1,4 +1,4 @@
-// src/js/drawing.js
+// src/js/public/drawing.js
 
 // Define Material Configs (Tailwind-like colors for consistency)
 export const WALL_TYPES = {

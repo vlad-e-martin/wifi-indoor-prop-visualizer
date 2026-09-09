@@ -10,13 +10,6 @@
 #include <optional>
 
 namespace RfSimulation {
-    /// @brief Represents a virtual transmitter mirrored across a sequence of walls
-    struct ImageNode {
-        Eigen::Vector3d position;
-        int wallIndex;   // Wall where this node was mirrored across (-1 for root Tx)
-        int parentIndex; // Parent image node in the flat tree array (-1 for root Tx)
-    };
-
     class SimulationEngine {
     public:
         /// @brief Initializes a ray originating from a vertically oriented dipole transmitter
@@ -49,7 +42,7 @@ namespace RfSimulation {
         /// @param walls The list of all walls in the environment
         /// @param maxBounces The maximum number of bounces before we stop considering this path
         /// @return A flat array representing the hierarchical Image Tree
-        static std::vector<ImageNode> generateImageTree(
+        static ImageNodeVector generateImageTree(
             const Eigen::Vector3d& txPos, 
             const WallVector& walls, 
             int maxBounces);
@@ -60,11 +53,11 @@ namespace RfSimulation {
         /// @param walls The list of all walls in the environment
         /// @param imageTree The pre-computed virtual image tree
         /// @return A list of geometrically valid paths
-        static std::vector<RayPath> computeValidPaths(
+        static RayPathVector computeValidPaths(
             const Eigen::Vector3d& txPos, 
             const Eigen::Vector3d& rxPos, 
             const WallVector& walls, 
-            const std::vector<ImageNode>& imageTree);
+            const ImageNodeVector& imageTree);
     private:
         /// @brief Mirror a point across a 2.5D wall plane
         static Eigen::Vector3d mirrorPoint(const Eigen::Vector3d& pt, const Wall& wall);

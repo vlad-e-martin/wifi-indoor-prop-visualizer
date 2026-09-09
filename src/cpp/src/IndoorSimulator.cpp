@@ -90,7 +90,7 @@ namespace RfSimulation {
 
         // Generate image tree associated with the current Tx position within the current floor plan
         // Max # of reflections is 5 to minimize the number of nodes in the tree
-        std::vector<ImageNode> imageTree = SimulationEngine::generateImageTree(txPos, m_walls, kMaxBounces);
+        ImageNodeVector imageTree = SimulationEngine::generateImageTree(txPos, m_walls, kMaxBounces);
 
         const double lambda = kSpeedOfLight_mPerSec / (freq_GHz * 1e9);
 
@@ -106,7 +106,7 @@ namespace RfSimulation {
                 Eigen::Vector3d rxPos(x * resolution_m, y * resolution_m, 1.5); 
 
                 // Retrieve all valid paths from the pre-computed tree
-                std::vector<RayPath> validPaths = SimulationEngine::computeValidPaths(txPos, rxPos, m_walls, imageTree);
+                RayPathVector validPaths = SimulationEngine::computeValidPaths(txPos, rxPos, m_walls, imageTree);
                 
                 if (y == 0 && x == 0) {
                     std::cout << "Successfully calculated valid paths for the first cell in the heatmap" << std::endl;

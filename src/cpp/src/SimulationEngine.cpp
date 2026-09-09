@@ -41,10 +41,10 @@ namespace RfSimulation {
         return false;
     }
 
-    std::vector<ImageNode> SimulationEngine::generateImageTree(
+    ImageNodeVector SimulationEngine::generateImageTree(
         const Eigen::Vector3d& txPos, const WallVector& walls, int maxBounces) 
     {
-        std::vector<ImageNode> tree;
+        ImageNodeVector tree;
         // Note: For N bounces and W walls, the tree size is roughly W^N 
         // If we assume that most single-floor homes will have ~16 walls, then
         // W=16, N=5 and thus the vector size must be ~1,000,000 
@@ -84,11 +84,11 @@ namespace RfSimulation {
         return tree;
     }
 
-    std::vector<RayPath> SimulationEngine::computeValidPaths(
+    RayPathVector SimulationEngine::computeValidPaths(
         const Eigen::Vector3d& txPos, const Eigen::Vector3d& rxPos, 
-        const WallVector& walls, const std::vector<ImageNode>& imageTree) 
+        const WallVector& walls, const ImageNodeVector& imageTree) 
     {
-        std::vector<RayPath> validPaths;
+        RayPathVector validPaths;
 
         // Starting from the transmitter, consider all possible ray reflection combinations
         for (const auto& leafNode : imageTree) {

@@ -11,6 +11,8 @@ namespace RfSimulation {
     // Configuration constants
     // NOTE: Max # of reflections is 5 to minimize the number of nodes in the tree
     constexpr int kMaxBounces = 5;
+    // NOTE: Max # of nodes in image tree of 5 million to minimize total runtime of analysis
+    constexpr double kMaxTargetNodes = 5000000.0; 
     // Default constants
     constexpr double kAvgWallPenetrationLoss_dB = 4.0;
 
@@ -79,38 +81,41 @@ namespace RfSimulation {
         double txX, double txY, double txZ, double freq_GHz, double txPower_dBm, 
         int gridWidth, int gridHeight, double resolution_m) 
     {
-        std::cout << "Entered [generateHeatmap]" << std::endl;
-
         Eigen::Vector3d txPos(txX, txY, txZ);
         double txPower_W = std::pow(10.0, (txPower_dBm - 30.0) / 10.0);
         
         std::vector<double> heatmap(gridWidth * gridHeight, -100.0); 
         
-        std::cout << "Allocated heatmap vector (size = " << heatmap.size() << ")" << std::endl;
+        int numBounces = kMaxBounces;
+        if (!m_walls.empty()) {
+            // Solve for N in the equation: W^N = MaxNodes
+            // N = log(MaxNodes) / log(W)
+            int maxSafeBounces = static_cast<int>(
+                std::floor(std::log(kMaxTargetNodes) / std::log(m_walls.size()))
+            );
+            
+            // Never drop below 1, never go above max
+            numBounces = std::clamp(maxSafeBounces, 1, kMaxBounces);
+
+            if (numBounces != kMaxBounces) {
+                std::cout << "Scaled # of reflections to " << numBounces 
+                    << " to keep computations timely when floorplan has " << m_walls.size() 
+                    << " walls." << std::endl;
+            }
+        }
 
         // Generate image tree associated with the current Tx position within the current floor plan
-        // Max # of reflections is 5 to minimize the number of nodes in the tree
-        ImageNodeVector imageTree = SimulationEngine::generateImageTree(txPos, m_walls, kMaxBounces);
+        ImageNodeVector imageTree = SimulationEngine::generateImageTree(txPos, m_walls, numBounces);
 
         const double lambda = kSpeedOfLight_mPerSec / (freq_GHz * 1e9);
 
         for (int y = 0; y < gridHeight; ++y) {
-            if (y == 0) {
-                std::cout << "Entered for loop to begin heatmap calculations" << std::endl;
-            }
-            if (y == 19) {
-                std::cout << "Reached 20th row of heatmap calculations" << std::endl;
-            }
             for (int x = 0; x < gridWidth; ++x) {
                 // Receiver height is standard user device level (1.5m)
                 Eigen::Vector3d rxPos(x * resolution_m, y * resolution_m, 1.5); 
 
                 // Retrieve all valid paths from the pre-computed tree
                 RayPathVector validPaths = SimulationEngine::computeValidPaths(txPos, rxPos, m_walls, imageTree);
-                
-                if (y == 0 && x == 0) {
-                    std::cout << "Successfully calculated valid paths for the first cell in the heatmap" << std::endl;
-                }
 
                 if (!validPaths.empty()) {
                     // Use ray tracing to superimpose all valid rays 
@@ -173,7 +178,6 @@ namespace RfSimulation {
             }
         }
 
-        std::cout << "Finished heatmap calculations" << std::endl;
         return heatmap;
     }
 }

@@ -61,7 +61,7 @@ namespace RfSimulation {
 
             // Iterate over all nodes generated in the previous depth level
             for (int i = currentLevelStart; i < currentLevelEnd; ++i) {
-                const ImageNode& parentNode = tree[i];
+                const ImageNode parentNode = tree[i];
 
                 // Mirror this node across every wall
                 for (size_t w = 0; w < walls.size(); ++w) {
@@ -74,6 +74,12 @@ namespace RfSimulation {
                     tree.push_back({mirroredPos, static_cast<int>(w), i});
                     nextLevelEnd++;
                 }
+            }
+
+            if (tree.size() > 2500000) {
+                // Break early if the tree is dangerously large to save server from running out of memory
+                // The ray-tracer should have enough reflections by this point
+                break; 
             }
             
             // Advance the BFS queue indices

@@ -26,7 +26,7 @@ namespace RfSimulation {
 
     bool SimulationEngine::isObstructed(
         const Eigen::Vector3d& p1, const Eigen::Vector3d& p2, 
-        const std::vector<Wall>& walls, int ignoreWallIdx1, int ignoreWallIdx2) 
+        const WallVector& walls, int ignoreWallIdx1, int ignoreWallIdx2) 
     {
         for (size_t i = 0; i < walls.size(); ++i) {
             if (static_cast<int>(i) == ignoreWallIdx1 || static_cast<int>(i) == ignoreWallIdx2) {
@@ -42,7 +42,7 @@ namespace RfSimulation {
     }
 
     std::vector<ImageNode> SimulationEngine::generateImageTree(
-        const Eigen::Vector3d& txPos, const std::vector<Wall>& walls, int maxBounces) 
+        const Eigen::Vector3d& txPos, const WallVector& walls, int maxBounces) 
     {
         std::vector<ImageNode> tree;
         // Note: For N bounces and W walls, the tree size is roughly W^N 
@@ -86,7 +86,7 @@ namespace RfSimulation {
 
     std::vector<RayPath> SimulationEngine::computeValidPaths(
         const Eigen::Vector3d& txPos, const Eigen::Vector3d& rxPos, 
-        const std::vector<Wall>& walls, const std::vector<ImageNode>& imageTree) 
+        const WallVector& walls, const std::vector<ImageNode>& imageTree) 
     {
         std::vector<RayPath> validPaths;
 
@@ -180,9 +180,9 @@ namespace RfSimulation {
         return std::nullopt;
     }
 
-    std::vector<Wall> SimulationEngine::getIntersectedWalls(
-        const Eigen::Vector3d& startPt, const Eigen::Vector3d& endPt, const std::vector<Wall>& walls) {
-        std::vector<Wall> intersected;
+    WallVector SimulationEngine::getIntersectedWalls(
+        const Eigen::Vector3d& startPt, const Eigen::Vector3d& endPt, const WallVector& walls) {
+        WallVector intersected;
         for (const auto& wall : walls) {
             if (getIntersection(startPt, endPt, wall).has_value()) {
                 intersected.push_back(wall);

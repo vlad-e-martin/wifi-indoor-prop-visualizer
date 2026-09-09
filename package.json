@@ -3,7 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "powershell -ExecutionPolicy Bypass -File .\\build_napi.ps1",
+    "rebuild": "powershell -ExecutionPolicy Bypass -File .\\build_napi.ps1 -Clean",
+    "start": "node src\\js\\server.js"
   },
   "repository": {
     "type": "git",

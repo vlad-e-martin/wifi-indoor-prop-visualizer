@@ -6,7 +6,7 @@ using namespace Eigen;
 
 class SimulationEngineTest : public ::testing::Test {
 protected:
-    std::vector<Wall> walls;
+    WallVector walls;
 
     void SetUp() override {
         // Material is largely irrelevant for purely geometric tests, so we default to Plasterboard

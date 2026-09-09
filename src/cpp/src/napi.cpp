@@ -1,20 +1,20 @@
-#include <napi.h>
 #include "IndoorSimulator.h"
+
+#include <napi.h>
+
+#include <iostream>
 #include <memory>
 #include <vector>
 
 class IndoorSimulatorWrapper : public Napi::ObjectWrap<IndoorSimulatorWrapper> {
 public:
     static Napi::Object Init(Napi::Env env, Napi::Object exports) {
-        // Define the JS simulator class and its native method
+        // Define the JS simulator class and map its native methods
         Napi::Function func = DefineClass(env, "IndoorSimulator", {
             InstanceMethod("generateHeatmap", &IndoorSimulatorWrapper::GenerateHeatmap)
         });
 
-        Napi::FunctionReference* constructor = new Napi::FunctionReference();
-        *constructor = Napi::Persistent(func);
-        env.SetInstanceData(constructor);
-
+        // Attach the simulator class directly to the exports object
         exports.Set("IndoorSimulator", func);
         return exports;
     }
@@ -42,31 +42,49 @@ private:
     Napi::Value GenerateHeatmap(const Napi::CallbackInfo& info) {
         Napi::Env env = info.Env();
 
-        if (info.Length() < 8) {
-            Napi::TypeError::New(env, "Expected 8 arguments").ThrowAsJavaScriptException();
+        try {
+            if (info.Length() < 8) {
+                Napi::TypeError::New(env, "Expected 8 arguments").ThrowAsJavaScriptException();
+                return env.Null();
+            }
+
+            std::cout << "Extracting JS inputs and converting into C++ primitives..." << std::endl;
+
+            // Extract JS arguments into C++ primitives
+            double txX = info[0].As<Napi::Number>().DoubleValue();
+            double txY = info[1].As<Napi::Number>().DoubleValue();
+            double txZ = info[2].As<Napi::Number>().DoubleValue();
+            double freq = info[3].As<Napi::Number>().DoubleValue();
+            double power = info[4].As<Napi::Number>().DoubleValue();
+            int gridW = info[5].As<Napi::Number>().Int32Value();
+            int gridH = info[6].As<Napi::Number>().Int32Value();
+            double res = info[7].As<Napi::Number>().DoubleValue();
+
+            std::cout << "Generating heatmap of received power levels..." << std::endl;
+
+            // Call C++ back-end to calculate heatmap results
+            std::vector<double> heatmap = m_simulator->generateHeatmap(txX, txY, txZ, freq, power, gridW, gridH, res);
+
+            std::cout << "Finished generating heatmap (final size: " << heatmap.size() << ")" << std::endl;
+
+            // Convert C++ types back into JS outputs
+            Napi::Float64Array jsArray = Napi::Float64Array::New(env, heatmap.size());
+            for (size_t i = 0; i < heatmap.size(); i++) {
+                jsArray[i] = heatmap[i];
+            }
+
+            std::cout << "Returning outputs to JS" << std::endl;
+
+            return jsArray;
+        }
+        catch (const std::exception& err) {
+            Napi::Error::New(env, std::string("RF simulation error: ") + err.what()).ThrowAsJavaScriptException();
             return env.Null();
         }
-
-        // Extract JS arguments into C++ primitives
-        double txX = info[0].As<Napi::Number>().DoubleValue();
-        double txY = info[1].As<Napi::Number>().DoubleValue();
-        double txZ = info[2].As<Napi::Number>().DoubleValue();
-        double freq = info[3].As<Napi::Number>().DoubleValue();
-        double power = info[4].As<Napi::Number>().DoubleValue();
-        int gridW = info[5].As<Napi::Number>().Int32Value();
-        int gridH = info[6].As<Napi::Number>().Int32Value();
-        double res = info[7].As<Napi::Number>().DoubleValue();
-
-        // Call C++ back-end to calculate heatmap results
-        std::vector<double> heatmap = m_simulator->generateHeatmap(txX, txY, txZ, freq, power, gridW, gridH, res);
-
-        // Convert C++ types back into JS outputs
-        Napi::Float64Array jsArray = Napi::Float64Array::New(env, heatmap.size());
-        for (size_t i = 0; i < heatmap.size(); i++) {
-            jsArray[i] = heatmap[i];
+        catch (...) {
+            Napi::Error::New(env, "Unexpected C++ error occurred!").ThrowAsJavaScriptException();
+            return env.Null();
         }
-
-        return jsArray;
     }
 };
 

@@ -42,7 +42,4 @@ if(DEFINED CMAKE_JS_VERSION)
     string(REPLACE "\"" "" NODE_ADDON_API_DIR "${NODE_ADDON_API_DIR}")
     
     target_include_directories(rf_simulator PRIVATE ${NODE_ADDON_API_DIR})
-    
-    # Disable C++ exceptions for N-API safety
-    target_compile_definitions(rf_simulator PRIVATE NAPI_DISABLE_CPP_EXCEPTIONS)
 endif()

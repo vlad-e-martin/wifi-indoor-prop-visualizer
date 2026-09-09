@@ -4,6 +4,8 @@
 #include "ITUR_P2040.h"
 
 #include <Eigen/Dense>
+#include <Eigen/StdVector>
+
 #include <vector>
 #include <complex>
 
@@ -19,6 +21,8 @@ namespace RfSimulation {
         ITUR_P2040::MaterialClass material;
     };
 
+    using WallVector = std::vector<Wall, Eigen::aligned_allocator<Wall>>;
+
     // Represents a ray segment at a given point in time
     struct RayState {
         Eigen::Vector3d position;
@@ -29,7 +33,7 @@ namespace RfSimulation {
 
     struct RayPath {
         std::vector<Eigen::Vector3d> nodes;
-        std::vector<Wall> hitWalls; 
+        WallVector hitWalls; 
     };
 }
 #endif // TYPES_H

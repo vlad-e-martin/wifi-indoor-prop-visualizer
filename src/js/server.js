@@ -1,9 +1,25 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
+
+const repoRoot = path.resolve(__dirname, '../../');
+console.log(`[i] Found the repository root directory: ${repoRoot}`);
+
+console.log("[i] Attempting to load rf_simulator N-API binary");
 
 // Load the compiled C++ N-API binary from cmake-js' output build directory
-const rfSimulatorPath = path.join(__dirname, '../../build/rf_simulator.node');
+const rfSimulatorPath = path.join(repoRoot, 'build', 'Release', 'rf_simulator.node');
+
+// prevent silent crashes if the path is wrong
+if (!fs.existsSync(rfSimulatorPath)) {
+    console.error(`\n[!] CRITICAL ERROR: Could not find the compiled binary.`);
+    console.error(`[!] Looked in: ${rfSimulatorPath}`);
+    console.error(`[!] NOTE: Please run 'npm run build' first to generate the .node file.\n`);
+    process.exit(1);
+}
+
 const rfSimulator = require(rfSimulatorPath);
+console.log("[i] Successfully loaded rf_simulator N-API binary");
 
 const app = express();
 const PORT = process.env.PORT || 3000;

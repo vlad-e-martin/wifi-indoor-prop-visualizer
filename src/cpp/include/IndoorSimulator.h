@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "SimulationEngine.h"
 #include "Types.h"
 
 namespace RfSimulation {
@@ -31,7 +32,7 @@ namespace RfSimulation {
             int gridWidth, int gridHeight, double resolution_m);
 
     private:
-        std::vector<Wall> m_walls;
+        WallVector m_walls;
         double m_roomHeight_m;
         
         /// @brief Parses the JSON payload and populates walls

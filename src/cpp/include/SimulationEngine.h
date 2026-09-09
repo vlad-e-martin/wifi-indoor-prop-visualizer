@@ -32,10 +32,10 @@ namespace RfSimulation {
             ITUR_P2040::MaterialClass materialClass);
 
         /// @brief Returns a list of all walls physically intersected by a direct line-of-sight path.
-        static std::vector<Wall> getIntersectedWalls(
+        static WallVector getIntersectedWalls(
             const Eigen::Vector3d& startPt, 
             const Eigen::Vector3d& endPt, 
-            const std::vector<Wall>& walls);
+            const WallVector& walls);
 
         /// @brief Calculates the 2D intersection point between a ray segment and a wall segment
         /// @return The 3D intersection point (with interpolated Z) if an intersection occurs, otherwise std::nullopt
@@ -51,7 +51,7 @@ namespace RfSimulation {
         /// @return A flat array representing the hierarchical Image Tree
         static std::vector<ImageNode> generateImageTree(
             const Eigen::Vector3d& txPos, 
-            const std::vector<Wall>& walls, 
+            const WallVector& walls, 
             int maxBounces);
 
         /// @brief Traces paths backward from Rx to Tx using the pre-computed Image Tree
@@ -63,7 +63,7 @@ namespace RfSimulation {
         static std::vector<RayPath> computeValidPaths(
             const Eigen::Vector3d& txPos, 
             const Eigen::Vector3d& rxPos, 
-            const std::vector<Wall>& walls, 
+            const WallVector& walls, 
             const std::vector<ImageNode>& imageTree);
     private:
         /// @brief Mirror a point across a 2.5D wall plane
@@ -73,7 +73,7 @@ namespace RfSimulation {
         static bool isObstructed(
             const Eigen::Vector3d& p1, 
             const Eigen::Vector3d& p2, 
-            const std::vector<Wall>& walls, 
+            const WallVector& walls, 
             int ignoreWallIdx1, 
             int ignoreWallIdx2);
     };

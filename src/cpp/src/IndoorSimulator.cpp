@@ -3,9 +3,9 @@
 
 #include <nlohmann/json.hpp>
 
+#include <cmath>
 #include <iostream>
 #include <numbers>
-#include <cmath>
 
 namespace RfSimulation {
     // Configuration constants
@@ -79,11 +79,15 @@ namespace RfSimulation {
         double txX, double txY, double txZ, double freq_GHz, double txPower_dBm, 
         int gridWidth, int gridHeight, double resolution_m) 
     {
+        std::cout << "Entered [generateHeatmap]" << std::endl;
+
         Eigen::Vector3d txPos(txX, txY, txZ);
         double txPower_W = std::pow(10.0, (txPower_dBm - 30.0) / 10.0);
         
         std::vector<double> heatmap(gridWidth * gridHeight, -100.0); 
         
+        std::cout << "Allocated heatmap vector (size = " << heatmap.size() << ")" << std::endl;
+
         // Generate image tree associated with the current Tx position within the current floor plan
         // Max # of reflections is 5 to minimize the number of nodes in the tree
         std::vector<ImageNode> imageTree = SimulationEngine::generateImageTree(txPos, m_walls, kMaxBounces);
@@ -91,14 +95,23 @@ namespace RfSimulation {
         const double lambda = kSpeedOfLight_mPerSec / (freq_GHz * 1e9);
 
         for (int y = 0; y < gridHeight; ++y) {
+            if (y == 0) {
+                std::cout << "Entered for loop to begin heatmap calculations" << std::endl;
+            }
+            if (y == 19) {
+                std::cout << "Reached 20th row of heatmap calculations" << std::endl;
+            }
             for (int x = 0; x < gridWidth; ++x) {
-                
                 // Receiver height is standard user device level (1.5m)
                 Eigen::Vector3d rxPos(x * resolution_m, y * resolution_m, 1.5); 
-                
+
                 // Retrieve all valid paths from the pre-computed tree
                 std::vector<RayPath> validPaths = SimulationEngine::computeValidPaths(txPos, rxPos, m_walls, imageTree);
                 
+                if (y == 0 && x == 0) {
+                    std::cout << "Successfully calculated valid paths for the first cell in the heatmap" << std::endl;
+                }
+
                 if (!validPaths.empty()) {
                     // Use ray tracing to superimpose all valid rays 
                     // into the final received E-field (thus accounting for multipath effects)
@@ -141,7 +154,7 @@ namespace RfSimulation {
                 } else {
                     // Fall-back on COST-231 Multi-Wall Model
                     double distance3d_m = (rxPos - txPos).norm();
-                    std::vector<Wall> penetratedWalls = SimulationEngine::getIntersectedWalls(txPos, rxPos, m_walls);
+                    WallVector penetratedWalls = SimulationEngine::getIntersectedWalls(txPos, rxPos, m_walls);
                     
                     // Calculate base Free Space Path Loss
                     double fspl_dB = 20.0 * std::log10(4.0 * std::numbers::pi * distance3d_m / lambda);
@@ -160,6 +173,7 @@ namespace RfSimulation {
             }
         }
 
+        std::cout << "Finished heatmap calculations" << std::endl;
         return heatmap;
     }
 }
